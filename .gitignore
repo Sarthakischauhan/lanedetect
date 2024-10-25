@@ -1,0 +1,8 @@
+base/
+.DS_STORE
+.ipynb_checkpoints
+*.swp
+
+
+# Any videos
+challenge_video.mp4
