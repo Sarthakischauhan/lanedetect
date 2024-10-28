@@ -18,9 +18,11 @@ while True:
         print("Can't receive frame (stream end?). Exiting ...")
         break
     # Our operations on the frame come here
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+    #ret,bw = cv.threshold(gray,127, 255,cv.THRESH_BINARY_INV);
+
     # Display the resulting frame
-    cv.imshow('frame', frame)
+    cv.imshow('frame', gray)
     if cv.waitKey(1) == ord('q'):
         break
  

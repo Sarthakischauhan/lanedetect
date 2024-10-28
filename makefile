@@ -1,0 +1,2 @@
+makeprogram: basic
+	python basic

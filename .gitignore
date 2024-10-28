@@ -2,7 +2,7 @@ base/
 .DS_STORE
 .ipynb_checkpoints
 *.swp
-
+*.mp4
 
 # Any videos
 challenge_video.mp4
