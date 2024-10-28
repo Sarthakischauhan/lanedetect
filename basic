@@ -16,50 +16,53 @@ if not cap.isOpened():
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
-    height, width, _ = frame.shape 
-    # if frame is read correctly ret is True
-    if not ret:
-        print("Can't receive frame (stream end?). Exiting ...")
-        break
-    # Our operations on the frame come here
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY);
-    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV);
-    yellow_mask = cv.inRange(hsv, yellow_lower, yellow_upper) 
-    
+    height, width = frame.shape[:2]
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    hsv = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
+
+    # Define yellow color range for masking
+    yellow_lower = np.array([20, 100, 100])
+    yellow_upper = np.array([30, 255, 255])
+    yellow_mask = cv.inRange(hsv, yellow_lower, yellow_upper)
+
+    # Define ROI mask
     mask = np.zeros_like(gray)
     polygon = np.array([[(0, height), (width, height), (width // 2 + 100, height // 2), (width // 2 - 100, height // 2)]])
-    
-# Fill the polygon on the mask
     cv.fillPoly(mask, [polygon], 255)
 
-    masked_image = cv.bitwise_and(gray, mask)
-    yellow_mask = cv.bitwise_and(yellow_mask, mask)
+    # Combine the gray mask with yellow mask
+    gray_mask = cv.bitwise_and(gray, mask)
+    main_mask = cv.bitwise_or(yellow_mask, gray_mask)
 
-    blur = cv.GaussianBlur(masked_image, (5, 5), 0)
-    ret,masked_image = cv.threshold(blur, 180, 200,cv.THRESH_BINARY)
-    main_mask = cv.bitwise_or(yellow_mask,masked_image);
+    # Apply Gaussian Blur
+    blur = cv.GaussianBlur(main_mask, (5, 5), 0)
 
-    edges = cv.Canny(main_mask, 50, 150)
-    lines = cv.HoughLinesP(edges, 1, np.pi / 180, 150, None, 0, 0)
+    # Apply threshold
+    ret, masked_image = cv.threshold(blur,180, 220, cv.THRESH_BINARY)
+    main_mask = cv.bitwise_or(yellow_mask, masked_image)
 
-    line_image = np.zeros_like(frame);
+    # Edge detection
+    edges = cv.Canny(main_mask, 60, 150)
+
+    # Detect lines
+    lines = cv.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=40, maxLineGap=5)
+
+    # Draw lines based on angle filtering
+    line_image = np.zeros_like(frame)
     if lines is not None:
         for line in lines:
             x1, y1, x2, y2 = line[0]
-            # Drawing lines: here (0, 255, 0) is green; adjust colors if needed for yellow/white
-            cv.line(line_image, (x1, y1), (x2, y2), (0, 255, 0), 10) 
+            line_angle = abs(math.degrees(math.atan2(y2 - y1, x2 - x1)))
+            if  30 < line_angle <= 100:  # Forward-oriented lines
+                print(line_angle)
+                cv.line(line_image, (x1, y1), (x2, y2), (0, 255, 0), 10)
 
+    frame = cv.addWeighted(frame, 0.8, line_image, 1, 1)
 
-    frame = cv.addWeighted(frame, 0.8,line_image, 1, 1)
-    #cv.imshow('frame',frame);
-    lab = cv.cvtColor(frame, cv.COLOR_BGR2LAB)
-    l_channel, a_channel, b_channel = cv.split(lab)
-    cv.imshow("L Channel", l_channel)
-    cv.imshow("A Channel", a_channel)
-    cv.imshow("B Channel", b_channel)
+    cv.imshow('Frame with Lane Lines', frame)
     if cv.waitKey(1) == ord('q'):
-        break
- 
+            break
+     
 # When everything done, release the capture
 cap.release()
 cv.destroyAllWindows()
