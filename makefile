@@ -1,2 +1,2 @@
 makeprogram: basic
-	python basic
+	python segment.py
