@@ -3,6 +3,8 @@ base/
 .ipynb_checkpoints
 *.swp
 *.mp4
-
+contours.py
+test.*
+img/
 # Any videos
 challenge_video.mp4
